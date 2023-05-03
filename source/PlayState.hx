@@ -3381,9 +3381,7 @@ class PlayState extends MusicBeatState
 					var strumDirection:Float = strumGroup.members[daNote.noteData].direction;
 					var strumAlpha:Float = strumGroup.members[daNote.noteData].alpha;
 					var strumScroll:Bool = strumGroup.members[daNote.noteData].downScroll;
-
-					strumX += daNote.offsetX;
-					strumY += daNote.offsetY;
+					
 					strumAngle += daNote.offsetAngle;
 					strumAlpha *= daNote.multAlpha;
 
