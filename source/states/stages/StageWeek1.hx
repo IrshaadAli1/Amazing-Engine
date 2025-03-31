@@ -57,8 +57,13 @@ class StageWeek1 extends BaseStage
 		}
 	}
 
-	override function eventCalled(eventName:String, value1:String, value2:String, flValue1:Null<Float>, flValue2:Null<Float>, strumTime:Float)
+	override function eventCalled(eventName:String, values:Array<String>, flValues:Array<Null<Float>>, strumTime:Float)
 	{
+		var value1:String = values[0];
+		var value2:String = values[1];
+
+		var flValue1:Null<Float> = flValues[0];
+		var flValue2:Null<Float> = flValues[1];
 		switch(eventName)
 		{
 			case "Dadbattle Spotlight":

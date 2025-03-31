@@ -212,17 +212,17 @@ end
 
 
 -- Event notes hooks
-function onEvent(name, value1, value2, strumTime)
+function onEvent(name, values, strumTime)
 	-- Event note triggered
 
 	-- print('Event triggered: ', name, value1, value2, strumTime);
 end
 
-function onEventPushed(name, value1, value2, strumTime)
+function onEventPushed(name, values, strumTime)
 	-- Called for every event note, recommended to precache assets
 end
 
-function eventEarlyTrigger(name, value1, value2, strumTime)
+function eventEarlyTrigger(name, values, strumTime)
 	--[[
 	Here's a port of the Kill Henchmen early trigger but on Lua instead of Haxe:
 

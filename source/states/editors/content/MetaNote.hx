@@ -168,14 +168,17 @@ class EventMetaNote extends MetaNote
 
 	override function setSustainLength(v:Float, stepCrochet:Float, zoom:Float = 1) {}
 
-	public var events:Array<Array<String>>;
+	public var events:Array<Array<Dynamic>>;
 	public function updateEventText()
 	{
 		var myTime:Float = Math.floor(this.strumTime);
 		if(events.length == 1)
 		{
 			var event = events[0];
-			eventText.text = 'Event: ${event[0]} ($myTime ms)\nValue 1: ${event[1]}\nValue 2: ${event[2]}';
+			eventText.text = 'Event: ${event[0]} ($myTime ms)\n';
+			for (i in 0...event[1].length) {
+				eventText.text += 'Value ${i+1}: ${event[1][i]}\n';
+			}
 		}
 		else if(events.length > 1)
 		{

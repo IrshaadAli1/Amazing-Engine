@@ -1471,31 +1471,34 @@ class PlayState extends MusicBeatState
 
 	// called by every event with the same name
 	function eventPushedUnique(event:EventNote) {
+		var value1 = event.values[0];
+		var value2 = event.values[1];
+
 		switch(event.event) {
 			case "Change Character":
 				var charType:Int = 0;
-				switch(event.value1.toLowerCase()) {
+				switch(value1.toLowerCase()) {
 					case 'gf' | 'girlfriend':
 						charType = 2;
 					case 'dad' | 'opponent':
 						charType = 1;
 					default:
-						var val1:Int = Std.parseInt(event.value1);
+						var val1:Int = Std.parseInt(value1);
 						if(Math.isNaN(val1)) val1 = 0;
 						charType = val1;
 				}
 
-				var newCharacter:String = event.value2;
+				var newCharacter:String = value2;
 				addCharacterToList(newCharacter, charType);
 
 			case 'Play Sound':
-				Paths.sound(event.value1); //Precache sound
+				Paths.sound(value1); //Precache sound
 		}
 		stagesFunc(function(stage:BaseStage) stage.eventPushedUnique(event));
 	}
 
 	function eventEarlyTrigger(event:EventNote):Float {
-		var returnedValue:Null<Float> = callOnScripts('eventEarlyTrigger', [event.event, event.value1, event.value2, event.strumTime], true);
+		var returnedValue:Null<Float> = callOnScripts('eventEarlyTrigger', [event.event, event.values[0], event.strumTime], true);
 		if(returnedValue != null && returnedValue != 0) {
 			return returnedValue;
 		}
@@ -1515,12 +1518,20 @@ class PlayState extends MusicBeatState
 		var subEvent:EventNote = {
 			strumTime: event[0] + ClientPrefs.data.noteOffset,
 			event: event[1][i][0],
-			value1: event[1][i][1],
-			value2: event[1][i][2]
+			values: []
 		};
+		if (event[1][i][1] is Array) {
+			subEvent.values = event[1][i][1];
+		} else {
+			for (ev in 1...event[1][i].length) {
+				subEvent.values.push(event[1][i][ev]);
+			}
+		}
 		eventNotes.push(subEvent);
 		eventPushed(subEvent);
-		callOnScripts('onEventPushed', [subEvent.event, subEvent.value1 != null ? subEvent.value1 : '', subEvent.value2 != null ? subEvent.value2 : '', subEvent.strumTime]);
+
+		trace([subEvent.event, subEvent.values, subEvent.strumTime]);
+		callOnScripts('onEventPushed', [subEvent.event, subEvent.values, subEvent.strumTime]);
 	}
 
 	public var skipArrowStartTween:Bool = false; //for lua
@@ -2045,24 +2056,19 @@ class PlayState extends MusicBeatState
 				return;
 			}
 
-			var value1:String = '';
-			if(eventNotes[0].value1 != null)
-				value1 = eventNotes[0].value1;
-
-			var value2:String = '';
-			if(eventNotes[0].value2 != null)
-				value2 = eventNotes[0].value2;
-
-			triggerEvent(eventNotes[0].event, value1, value2, leStrumTime);
+			triggerEvent(eventNotes[0].event, [for (event in eventNotes[0].values) event ?? ''], leStrumTime);
 			eventNotes.shift();
 		}
 	}
 
-	public function triggerEvent(eventName:String, value1:String, value2:String, strumTime:Float) {
-		var flValue1:Null<Float> = Std.parseFloat(value1);
-		var flValue2:Null<Float> = Std.parseFloat(value2);
-		if(Math.isNaN(flValue1)) flValue1 = null;
-		if(Math.isNaN(flValue2)) flValue2 = null;
+	public function triggerEvent(eventName:String, values:Array<String>, strumTime:Float) {
+		var flValues:Array<Null<Float>> = [for (val in values) Math.isNaN(Std.parseFloat(val)) ? null : Std.parseFloat(val)];
+
+		var value1 = values[0];
+		var value2 = values[1];
+		
+		var flValue1:Null<Float> = flValues[0];
+		var flValue2:Null<Float> = flValues[1];
 
 		switch(eventName) {
 			case 'Hey!':
@@ -2298,10 +2304,13 @@ class PlayState extends MusicBeatState
 			case 'Play Sound':
 				if(flValue2 == null) flValue2 = 1;
 				FlxG.sound.play(Paths.sound(value1), flValue2);
+
+			case 'BotplaySet':
+				botplayTxt.text = values[0] + values[1] + values[2];
 		}
 
-		stagesFunc(function(stage:BaseStage) stage.eventCalled(eventName, value1, value2, flValue1, flValue2, strumTime));
-		callOnScripts('onEvent', [eventName, value1, value2, strumTime]);
+		stagesFunc(function(stage:BaseStage) stage.eventCalled(eventName, values, flValues, strumTime));
+		callOnScripts('onEvent', [eventName, values, strumTime]);
 	}
 
 	public function moveCameraSection(?sec:Null<Int>):Void {

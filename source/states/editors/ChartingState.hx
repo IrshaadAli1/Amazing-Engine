@@ -84,7 +84,8 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 		['Change Character', "Value 1: Character to change (Dad, BF, GF)\nValue 2: New character's name"],
 		['Change Scroll Speed', "Value 1: Scroll Speed Multiplier (1 is default)\nValue 2: Time it takes to change fully in seconds."],
 		['Set Property', "Value 1: Variable name\nValue 2: New value"],
-		['Play Sound', "Value 1: Sound file name\nValue 2: Volume (Default: 1), ranges from 0 to 1"]
+		['Play Sound', "Value 1: Sound file name\nValue 2: Volume (Default: 1), ranges from 0 to 1"],
+		['BotplaySet', "xyzabc"],
 	];
 	
 	public static var keysArray:Array<FlxKey> = [ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT]; //Used for Vortex Editor
@@ -1391,7 +1392,8 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 							trace('Added event at time: $strumTime');
 							var didAdd:Bool = false;
 
-							var eventAdded:EventMetaNote = createEvent([strumTime, [[eventsList[Std.int(Math.max(eventDropDown.selectedIndex, 0))][0], value1InputText.text, value2InputText.text]]]);
+							var eventAdded:EventMetaNote = createEvent([strumTime, [[eventsList[Std.int(Math.max(eventDropDown.selectedIndex, 0))][0], [for (val in valuesInputTexts) val.text]]]]);
+							trace("EVENT ADDED:", [strumTime, [[eventsList[Std.int(Math.max(eventDropDown.selectedIndex, 0))][0], [for (val in valuesInputTexts) val.text]]]]);
 							for (num in sectionFirstEventID...events.length)
 							{
 								var event = events[num];
@@ -1704,8 +1706,7 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 			strumTimeStepper.value = selectedNotes[0].strumTime;
 			noteTypeDropDown.selectedLabel = '';
 			eventDropDown.selectedLabel = '';
-			value1InputText.text = '';
-			value2InputText.text = '';
+			valuesInputTexts = [];
 		}
 		forceDataUpdate = true;
 	}
@@ -1719,7 +1720,7 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 			selectedEventText.text = 'Selected Event: ${curEventSelected + 1} / ${eventNote.events.length}';
 			selectedEventText.visible = true;
 			
-			var myEvent:Array<String> = eventNote.events[curEventSelected];
+			var myEvent:Array<Dynamic> = eventNote.events[curEventSelected];
 			if(myEvent != null)
 			{
 				var eventName:String = (myEvent[0] != null) ? myEvent[0] : '';
@@ -1731,8 +1732,9 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 						break;
 					}
 				}
-				value1InputText.text = (myEvent[1] != null) ? myEvent[1] : '';
-				value2InputText.text = (myEvent[2] != null) ? myEvent[2] : '';
+				for (val in 0...myEvent[1].length) {
+					valuesInputTexts[val].text = myEvent[1][val] ?? '';
+				}
 			}
 		}
 		else selectedEventText.visible = false;
@@ -2515,8 +2517,10 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 	}
 
 	var eventDropDown:PsychUIDropDownMenu;
-	var value1InputText:PsychUIInputText;
-	var value2InputText:PsychUIInputText;
+
+	var valuesInputTexts:Array<PsychUIInputText> = [];
+	var valuesValueTexts:Array<FlxText> = [];
+
 	var selectedEventText:FlxText;
 	var eventDescriptionText:FlxText;
 
@@ -2597,7 +2601,8 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 		{
 			genericEventButton(function(event:EventMetaNote)
 			{
-				event.events.push([eventsList[Std.int(Math.max(eventDropDown.selectedIndex, 0))][0], value1InputText.text, value2InputText.text]);
+				event.events.push([eventsList[Std.int(Math.max(eventDropDown.selectedIndex, 0))][0], [for (val in valuesInputTexts) val.text]]);
+				trace("EVENT PUSHED: ", [eventsList[Std.int(Math.max(eventDropDown.selectedIndex, 0))][0], [for (val in valuesInputTexts) val.text]]);
 				event.updateEventText();
 				curEventSelected++;
 			});
@@ -2610,10 +2615,15 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 		{
 			genericEventButton(function(event:EventMetaNote) curEventSelected = FlxMath.wrap(curEventSelected + 1, 0, event.events.length - 1));
 		}, 20);
+
+		var objYInputs = objY + 70;
+
 		removeButton.normalStyle.bgColor = FlxColor.RED;
 		removeButton.normalStyle.textColor = FlxColor.WHITE;
 		addButton.normalStyle.bgColor = FlxColor.GREEN;
 		addButton.normalStyle.textColor = FlxColor.WHITE;
+
+		
 
 		selectedEventText = new FlxText(150, objY + 30, 150, '');
 		selectedEventText.visible = false;
@@ -2627,40 +2637,59 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 					if(note == null || !note.isEvent) continue;
 
 					var event:EventMetaNote = cast (note, EventMetaNote);
-					event.events[event.events.length - 1][n] = str;
+					trace(event.events);
+					event.events[event.events.length - 1][1][n] = str;
 					event.updateEventText();
 				}
 			}
 			else if(selectedNotes.length == 1 && selectedNotes[0].isEvent)
 			{
 				var event:EventMetaNote = cast (selectedNotes[0], EventMetaNote);
+				trace(event.events[Std.int(FlxMath.bound(curEventSelected, 0, event.events.length - 1))]);
 				event.events[Std.int(FlxMath.bound(curEventSelected, 0, event.events.length - 1))][n] = str;
 				event.updateEventText();
 			}
 		}
 
-		objY += 70;
-		value1InputText = new PsychUIInputText(objX, objY, 120, '', 8);
-		value1InputText.onChange = function(old:String, cur:String) changeEventsValue(cur, 1);
-		value2InputText = new PsychUIInputText(objX + 150, objY, 120, '', 8);
-		value2InputText.onChange = function(old:String, cur:String) changeEventsValue(cur, 2);
+		var addEventValueButton:PsychUIButton = new PsychUIButton(objX2 + 30, objY + 30, '+', function() {
+			var inputText:PsychUIInputText = new PsychUIInputText(objX, objYInputs + (30 * valuesInputTexts.length), 120, '', 8);
+			var indexX12 = valuesInputTexts.length + 1;
+			inputText.onChange = function(old:String, cur:String) changeEventsValue(cur, indexX12);
+			valuesInputTexts.push(inputText);
+			
+			var otherText:FlxText = new FlxText(inputText.x, inputText.y - 15, 80, "Value " + Std.string(indexX12) + ":");
+			valuesValueTexts.push(otherText);
 
-		objY += 40;
+			tab_group.remove(eventDropDown);
+			tab_group.add(inputText);
+			tab_group.add(otherText);
+			tab_group.add(eventDropDown);
+
+			updateSelectedEventText();
+		}, 20);
+		var	removeEventValueButton:PsychUIButton = new PsychUIButton(objX2, objY + 30, '-', function() {
+			if (valuesInputTexts.length > 0) {
+				tab_group.remove(valuesInputTexts.pop());
+				tab_group.remove(valuesValueTexts.pop());
+			}
+		}, 20);
+		
+		removeEventValueButton.normalStyle.bgColor = FlxColor.RED;
+		removeEventValueButton.normalStyle.textColor = FlxColor.WHITE;
+		addEventValueButton.normalStyle.bgColor = FlxColor.GREEN;
+		addEventValueButton.normalStyle.textColor = FlxColor.WHITE;
+
+		objY += 40 + 70;
 		eventDescriptionText = new FlxText(objX, objY, 280, defaultEvents[0][1]);
-
-		tab_group.add(new FlxText(eventDropDown.x, eventDropDown.y - 15, 80, 'Event:'));
-		tab_group.add(new FlxText(value1InputText.x, value1InputText.y - 15, 80, 'Value 1:'));
-		tab_group.add(new FlxText(value2InputText.x, value2InputText.y - 15, 80, 'Value 2:'));
 
 		tab_group.add(removeButton);
 		tab_group.add(addButton);
 		tab_group.add(leftButton);
 		tab_group.add(rightButton);
 		tab_group.add(selectedEventText);
-
-		tab_group.add(value1InputText);
-		tab_group.add(value2InputText);
 		tab_group.add(eventDescriptionText);
+		tab_group.add(addEventValueButton);
+		tab_group.add(removeEventValueButton);
 		
 		tab_group.add(eventDropDown); //lowest priority to display properly
 	}

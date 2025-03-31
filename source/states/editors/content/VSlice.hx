@@ -322,9 +322,15 @@ class VSlice
 			for (event in songData.events)
 			{
 				var subEvents:Array<Array<Dynamic>> = cast event[1];
-				if(subEvents != null && subEvents.length > 0)
-					for (lilEvent in subEvents)
-						events.push({t: event[0], e: lilEvent[0], v: {value1: lilEvent[1], value2: lilEvent[2]}});
+				if(subEvents != null && subEvents.length > 0) {
+					for (lilEvent in subEvents) {
+						var eventValues: Map<String, Dynamic> = new Map();
+						for (val in 1...lilEvent.length) {
+							eventValues.set("value" + val, lilEvent[val]);
+						}
+						events.push({t: event[0], e: lilEvent[0], v: eventValues});
+					}	
+				}
 			}
 		}
 
